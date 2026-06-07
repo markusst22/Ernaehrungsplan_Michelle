@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#fbeef4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mahlzeit">
+<title>Mahlzeit · Ernährungsplan</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"Mahlzeit · Ernährungsplan","short_name":"Mahlzeit","start_url":".","display":"standalone","background_color":"%23fbeef4","theme_color":"%23fbeef4","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 192 192%27%3E%3Crect width=%27192%27 height=%27192%27 rx=%2742%27 fill=%27%23d98aa8%27/%3E%3Cg fill=%27none%27 stroke=%27%23fff6fa%27 stroke-width=%279%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M70 52v88%27/%3E%3Cpath d=%27M58 52v34c0 9 5 13 12 13s12-4 12-13V52%27/%3E%3Cpath d=%27M124 52c-12 0-18 14-18 30s6 22 18 22v36%27/%3E%3C/g%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml"}]}'>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%23d98aa8'/%3E%3Cg fill='none' stroke='%23fff6fa' stroke-width='9' stroke-linecap='round'%3E%3Cpath d='M70 52v88'/%3E%3Cpath d='M58 52v34c0 9 5 13 12 13s12-4 12-13V52'/%3E%3Cpath d='M124 52c-12 0-18 14-18 30s6 22 18 22v36'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#fbeef4; --bg2:#fff6fa; --card:#ffffff; --ink:#3a2b31; --ink-soft:#6e5a62;
+    --line:#f1d8e4; --green:#d98aa8; --green-d:#b75e85; --green-soft:#fbe3ee;
+    --mint:#f3cdde; --accent:#b1517a; --shadow:0 1px 2px rgba(120,55,85,.06),0 6px 22px rgba(120,55,85,.08);
+    --fish:#a06fb8; --fish-bg:#efe3f4;
+    --r:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    background:
+      radial-gradient(120% 60% at 100% 0%,#fbe0ee 0%,transparent 60%),
+      radial-gradient(120% 50% at 0% 100%,#f7e2ef 0%,transparent 55%),
+      var(--bg);
+    color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.45;
+    min-height:100vh; min-height:100dvh;
+  }
+  .app{max-width:560px;margin:0 auto;padding:
+    calc(14px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));}
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:2px 2px 16px}
+  .brand{display:flex;flex-direction:column;gap:1px}
+  .brand .kicker{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--green-d);font-weight:700}
+  .brand h1{font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:26px;margin:0;letter-spacing:-.01em}
+  .iconbtn{
+    border:1px solid var(--line);background:var(--card);color:var(--ink);
+    border-radius:14px;padding:9px 13px;font-size:14px;font-weight:600;cursor:pointer;
+    box-shadow:var(--shadow);display:inline-flex;align-items:center;gap:7px;transition:transform .12s ease,background .15s;
+  }
+  .iconbtn:active{transform:scale(.96)}
+  .iconbtn.primary{background:var(--green);border-color:var(--green-d);color:#fff}
+
+  .week-meta{display:flex;align-items:center;gap:10px;margin:0 2px 14px;flex-wrap:wrap}
+  .pill{font-size:12px;color:var(--ink-soft);background:var(--bg2);border:1px solid var(--line);
+    padding:5px 11px;border-radius:999px;font-weight:600}
+  .pill b{color:var(--accent)}
+
+  .day{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;animation:rise .4s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .day-head{display:flex;align-items:center;justify-content:space-between;
+    padding:13px 16px 11px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fffafc,#fff)}
+  .day-head .dl{display:flex;align-items:baseline;gap:9px}
+  .day-head .dname{font-weight:700;font-size:15px;letter-spacing:.01em}
+  .day-head .ddate{font-size:12px;color:var(--ink-soft)}
+  .reroll{border:none;background:var(--green-soft);color:var(--green-d);width:32px;height:32px;
+    border-radius:10px;font-size:15px;cursor:pointer;display:grid;place-items:center;transition:transform .25s,background .15s}
+  .reroll:active{transform:rotate(180deg) scale(.9);background:var(--mint)}
+  .meal{padding:12px 16px;display:flex;gap:12px;align-items:flex-start}
+  .meal + .meal{border-top:1px dashed var(--line)}
+  .mtag{flex:0 0 auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;
+    background:var(--green-soft)}
+  .meal.dinner .mtag{background:#f3e7f0}
+  .mbody{flex:1;min-width:0}
+  .mkind{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-soft);font-weight:700}
+  .mname{font-weight:650;font-size:14.5px;margin:1px 0 4px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .fishbadge{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--fish);
+    background:var(--fish-bg);border-radius:7px;padding:2px 7px;text-transform:uppercase}
+  .ings{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+  .ings .amt{color:var(--accent);font-weight:600}
+  .macros{display:flex;gap:7px;padding:11px 16px 14px;flex-wrap:wrap;background:var(--bg2);border-top:1px solid var(--line)}
+  .macro{flex:1 1 0;min-width:62px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:7px 9px;text-align:center}
+  .macro .v{font-weight:700;font-size:15px;line-height:1.1}
+  .macro .v small{font-size:10px;font-weight:600;color:var(--ink-soft)}
+  .macro .l{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-top:2px;font-weight:600}
+  .macro.kcal .v{color:var(--accent)}
+  .macro .bar{height:3px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+  .macro .bar i{display:block;height:100%;background:var(--green);border-radius:3px}
+  .macro.over .bar i{background:#d98f5a}
+
+  .filterbar{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);padding:13px 14px;margin-bottom:16px}
+  .filterbar .frow{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+  .filterbar .ftitle{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-soft);font-weight:700}
+  .filterbar .fmini{font-size:12px;color:var(--green-d);font-weight:600;cursor:pointer;background:none;border:none}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{border:1px solid var(--line);background:var(--bg2);color:var(--ink-soft);border-radius:11px;
+    padding:8px 0;font-size:13px;font-weight:600;cursor:pointer;flex:1 1 0;text-align:center;min-width:38px;transition:.12s}
+  .chip.on{background:var(--green);border-color:var(--green-d);color:#fff}
+  .chip:active{transform:scale(.94)}
+  .cat{margin-bottom:16px}
+  .cat h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--green-d);
+    margin:0 4px 8px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .cat h3 .ci{font-size:15px}
+  .cat h3 .cn{font-size:11px;color:var(--ink-soft);font-weight:600;letter-spacing:.02em;text-transform:none}
+  .list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+  .item{display:flex;align-items:center;gap:12px;padding:12px 15px;cursor:pointer;transition:background .12s}
+  .item + .item{border-top:1px solid var(--line)}
+  .item:active{background:var(--bg2)}
+  .cbox{flex:0 0 auto;width:23px;height:23px;border-radius:8px;border:2px solid var(--mint);
+    display:grid;place-items:center;transition:.15s}
+  .cbox svg{width:13px;height:13px;opacity:0;transform:scale(.5);transition:.15s}
+  .item.done .cbox{background:var(--green);border-color:var(--green)}
+  .item.done .cbox svg{opacity:1;transform:scale(1)}
+  .iname{flex:1;font-size:14.5px;font-weight:550}
+  .iamt{font-size:13px;font-weight:700;color:var(--accent);text-align:right}
+  .ipack{display:block;font-size:10.5px;font-weight:600;color:var(--ink-soft)}
+  .item.done .iname,.item.done .iamt{color:var(--ink-soft);text-decoration:line-through;text-decoration-color:var(--mint)}
+  .empty{text-align:center;color:var(--ink-soft);font-size:14px;padding:40px 20px}
+
+  .hint{font-size:11.5px;color:var(--ink-soft);text-align:center;margin:4px 6px 0;line-height:1.5}
+
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;
+    padding:8px 16px calc(8px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgba(251,238,244,0),var(--bg) 38%);}
+  .tabbar .inner{max-width:560px;margin:0 auto;background:var(--card);border:1px solid var(--line);
+    border-radius:20px;box-shadow:var(--shadow);display:flex;padding:6px;gap:6px}
+  .tab{flex:1;border:none;background:none;border-radius:15px;padding:9px 6px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-soft);font-weight:650;font-size:11.5px;transition:.15s}
+  .tab .ti{font-size:19px;line-height:1}
+  .tab.on{background:var(--green-soft);color:var(--green-d)}
+  .tab .badge{font-size:10px;background:var(--green);color:#fff;border-radius:999px;padding:0 6px;min-width:16px;line-height:16px}
+
+  .view{display:none}
+  .view.on{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="kicker">Wochenküche</span>
+      <h1>Mahlzeit</h1>
+    </div>
+    <button class="iconbtn primary" id="regenBtn">🎲 Neu</button>
+  </header>
+
+  <section class="view on" id="viewPlan">
+    <div class="week-meta" id="weekMeta"></div>
+    <div id="planList"></div>
+    <p class="hint">Ziel pro Tag: <b>120 g Protein · ~30 g Fett · 1500 kcal</b>.<br>
+      Frühstück ist fix, das Abendessen wird so berechnet, dass die Tagesziele zusammen aufgehen. Kein Brot · genau 2 Fischtage.</p>
+  </section>
+
+  <section class="view" id="viewShop">
+    <div class="filterbar">
+      <div class="frow">
+        <span class="ftitle">Tage einbeziehen</span>
+        <button class="fmini" id="toggleAll">Alle / Keine</button>
+      </div>
+      <div class="chips" id="dayChips"></div>
+    </div>
+    <div id="shopList"></div>
+  </section>
+</div>
+
+<nav class="tabbar">
+  <div class="inner">
+    <button class="tab on" data-view="Plan"><span class="ti">🗓️</span><span>Wochenplan</span></button>
+    <button class="tab" data-view="Shop"><span class="ti">🛒</span><span>Einkaufsliste <span class="badge" id="shopBadge" style="display:none">0</span></span></button>
+  </div>
+</nav>
+
+<script>
+"use strict";
+
+/* ---------- Lebensmittel (je 100 g, REWE-üblich) ---------- */
+const ING = {
+  // Milchprodukte
+  magerquark:{n:"Magerquark",cat:"milch",p:12,f:.3,c:4,pack:500,kmin:100,kmax:450},
+  skyr:{n:"Skyr natur",cat:"milch",p:11,f:.2,c:4,pack:450,kmin:150,kmax:450},
+  harzer:{n:"Harzer Käse",cat:"milch",p:30,f:.7,c:0,pack:200,kmin:80,kmax:220},
+  // Fisch & Meeresfrüchte
+  lachs:{n:"Lachsfilet",cat:"fisch",p:20,f:13,c:0,pack:125},
+  makrele:{n:"Makrelenfilet",cat:"fisch",p:20,f:16,c:0,pack:200},
+  forelle:{n:"Forellenfilet",cat:"fisch",p:20,f:7,c:0,pack:250},
+  garnelen:{n:"Garnelen (TK)",cat:"fisch",p:18,f:1.5,c:0,pack:200,kmin:120,kmax:320},
+  // Fleisch
+  haehnchen:{n:"Hähnchenbrustfilet",cat:"fleisch",p:23,f:1.5,c:0,pack:400,kmin:120,kmax:330},
+  pute:{n:"Putenbrustfilet",cat:"fleisch",p:24,f:1,c:0,pack:400,kmin:120,kmax:330},
+  // Obst & Gemüse
+  brokkoli:{n:"Brokkoli",cat:"gemuese",p:3,f:.4,c:7,pack:400},
+  paprika:{n:"Paprika",cat:"gemuese",p:1,f:.3,c:6,piece:150},
+  zucchini:{n:"Zucchini",cat:"gemuese",p:1.2,f:.3,c:3,piece:200},
+  zwiebel:{n:"Zwiebel",cat:"gemuese",p:1.1,f:.1,c:9,piece:100},
+  spinat:{n:"Blattspinat (TK)",cat:"gemuese",p:3,f:.4,c:1.5,pack:450},
+  gemuesemix:{n:"Gemüsepfanne (TK)",cat:"gemuese",p:2,f:.5,c:6,pack:450},
+  // Trockenwaren & Vorrat
+  reis:{n:"Reis",cat:"vorrat",p:7,f:.6,c:78,pack:500,kmin:60,kmax:220},
+  nudeln:{n:"Vollkornnudeln",cat:"vorrat",p:13,f:2.5,c:62,pack:500,kmin:60,kmax:230},
+  tomaten:{n:"Passierte Tomaten",cat:"vorrat",p:1.4,f:.2,c:5,pack:500},
+  tofu:{n:"Tofu natur",cat:"vorrat",p:12,f:7,c:1.5,pack:200},
+  granola:{n:"Granola",cat:"vorrat",p:8,f:16,c:62,pack:500},
+  walnuss:{n:"Walnusskerne",cat:"vorrat",p:15,f:65,c:7,pack:200},
+  chia:{n:"Chiasamen",cat:"vorrat",p:17,f:31,c:8,pack:200},
+  whey:{n:"Whey-Proteinpulver",cat:"vorrat",p:80,f:6,c:6,pantry:true},
+  olivenoel:{n:"Olivenöl",cat:"vorrat",p:0,f:100,c:0,pantry:true},
+};
+const CATS = {
+  milch:{n:"Milchprodukte & Eier",i:"🥛"},
+  fisch:{n:"Fisch & Meeresfrüchte",i:"🐟"},
+  fleisch:{n:"Fleisch",i:"🍗"},
+  gemuese:{n:"Obst & Gemüse",i:"🥦"},
+  vorrat:{n:"Trockenwaren & Vorrat",i:"🫙"},
+};
+const CAT_ORDER = ["milch","fisch","fleisch","gemuese","vorrat"];
+const kcalPer100 = id => ING[id].p*4 + ING[id].f*9 + ING[id].c*4;
+
+/* ---------- Fixes Frühstück (jeden Tag gleich) ---------- */
+const FIXED_BREAKFAST = {magerquark:250, granola:30, whey:20, chia:5, walnuss:10};
+const BREAKFAST_NAME = "Protein-Quark-Bowl mit Granola";
+
+/* ---------- Abendessen: role P = Protein-Stellschraube, C = Carb-Stellschraube ---------- */
+const DINNERS = [
+  {id:"d1",n:"Hähnchen-Reispfanne",items:[["haehnchen",200,"P"],["reis",120,"C"],["brokkoli",200,""],["paprika",100,""],["olivenoel",5,""]]},
+  {id:"d2",n:"Lachs, Reis, Brokkoli & Quark-Dip",fish:"omega",items:[["lachs",110,""],["reis",120,"C"],["brokkoli",200,""],["magerquark",200,"P"]]},
+  {id:"d3",n:"Makrele-Reispfanne & Skyr-Dip",fish:"omega",items:[["makrele",90,""],["reis",120,"C"],["zucchini",200,""],["skyr",200,"P"]]},
+  {id:"d4",n:"Garnelen-Gemüse-Reispfanne",fish:"garnele",items:[["garnelen",200,"P"],["reis",120,"C"],["zucchini",200,""],["paprika",100,""],["olivenoel",5,""]]},
+  {id:"d6",n:"Forelle mit Reis & Gemüse",fish:"omega",items:[["forelle",150,""],["reis",120,"C"],["gemuesemix",250,""],["magerquark",150,"P"]]},
+  {id:"d7",n:"Putenbrust mit Vollkornnudeln & Tomatensauce",items:[["pute",200,"P"],["nudeln",120,"C"],["tomaten",200,""],["zwiebel",50,""],["olivenoel",5,""]]},
+  {id:"d8",n:"Hähnchen-Reis mit Spinat & Tomate",items:[["haehnchen",200,"P"],["reis",120,"C"],["spinat",150,""],["tomaten",100,""]]},
+  {id:"d9",n:"Tofu-Gemüse-Wok mit Reis",veg:true,items:[["tofu",150,""],["magerquark",200,"P"],["reis",120,"C"],["gemuesemix",300,""]]},
+  {id:"d11",n:"Harzer-Reispfanne mit Gemüse",veg:true,items:[["harzer",180,"P"],["reis",120,"C"],["zucchini",150,""],["paprika",100,""],["olivenoel",5,""]]},
+];
+const FISH_DAYS_PER_WEEK = 2;
+const FISH_DINNERS   = DINNERS.filter(d=>d.fish);    // Lachs/Makrele/Forelle/Garnelen
+const NOFISH_DINNERS = DINNERS.filter(d=>!d.fish);
+
+const DAY_P=120, DAY_KCAL=1500;
+const WD = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
+
+/* ---------- Solver: skaliert P- & C-Knopf des Abendessens ---------- */
+function solveMeal(meal, targetP, targetKcal){
+  let fixedP=0, fixedKcal=0, pKnob=null, cKnob=null;
+  const amounts={};
+  for(const [id,g,role] of meal.items){
+    if(role==="P") pKnob={id,g};
+    else if(role==="C") cKnob={id,g};
+    else { amounts[id]=(amounts[id]||0)+g; fixedP+=ING[id].p*g/100; fixedKcal+=kcalPer100(id)*g/100; }
+  }
+  const a1=ING[pKnob.id].p/100, b1=ING[cKnob.id].p/100;
+  const a2=kcalPer100(pKnob.id)/100, b2=kcalPer100(cKnob.id)/100;
+  const r1=targetP-fixedP, r2=targetKcal-fixedKcal;
+  const det=a1*b2-b1*a2;
+  let pg=pKnob.g, cg=cKnob.g;
+  if(Math.abs(det)>1e-9){ pg=(r1*b2-b1*r2)/det; cg=(a1*r2-r1*a2)/det; }
+  const clamp=(v,id)=>Math.max(ING[id].kmin||30,Math.min(ING[id].kmax||450,v));
+  pg=Math.round(clamp(pg,pKnob.id)/5)*5;
+  cg=Math.round(clamp(cg,cKnob.id)/5)*5;
+  amounts[pKnob.id]=(amounts[pKnob.id]||0)+pg;
+  amounts[cKnob.id]=(amounts[cKnob.id]||0)+cg;
+  return amounts;
+}
+function macrosOf(amounts){
+  let p=0,f=0,c=0;
+  for(const id in amounts){const g=amounts[id];p+=ING[id].p*g/100;f+=ING[id].f*g/100;c+=ING[id].c*g/100;}
+  return {p,f,c,kcal:p*4+f*9+c*4};
+}
+function mergeAmt(a,b){const o={...a};for(const k in b)o[k]=(o[k]||0)+b[k];return o;}
+function buildDay(d){
+  const bm=macrosOf(FIXED_BREAKFAST);
+  const da=solveMeal(d, DAY_P-bm.p, DAY_KCAL-bm.kcal);
+  const ba={...FIXED_BREAKFAST};
+  return {d:d.id, ba, da, macros:macrosOf(mergeAmt(ba,da))};
+}
+
+/* ---------- Wochenerzeugung: genau 2 Fischtage ---------- */
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function genDay(mode){ return buildDay(pick(mode==="fish"?FISH_DINNERS:NOFISH_DINNERS)); }
+function isFishDay(day){return !!DINNERS.find(d=>d.id===day.d).fish;}
+function fishCount(week){return week.filter(isFishDay).length;}
+function genWeek(){
+  const idx=[0,1,2,3,4,5,6];
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  const fishSet=new Set(idx.slice(0,FISH_DAYS_PER_WEEK));
+  const week=[];
+  for(let i=0;i<7;i++) week.push(genDay(fishSet.has(i)?"fish":"nofish"));
+  return week;
+}
+
+/* ---------- State + Persistenz ---------- */
+let state = load() || {week:genWeek(), days:[0,1,2,3,4,5,6], checks:{}};
+if(!Array.isArray(state.week) || state.week.length!==7 ||
+   state.week.some(x=>!x||!DINNERS.find(d=>d.id===x.d)) ||
+   fishCount(state.week)!==FISH_DAYS_PER_WEEK){
+  state.week=genWeek(); state.checks={};
+}
+function load(){try{const s=localStorage.getItem("mahlzeit_v2");return s?JSON.parse(s):null;}catch(e){return null;}}
+function save(){try{localStorage.setItem("mahlzeit_v2",JSON.stringify(state));}catch(e){}}
+
+/* ---------- Rendering: Wochenplan ---------- */
+function ingLine(amounts){
+  return Object.keys(amounts).map(id=>{
+    const g=Math.round(amounts[id]);
+    let amt = ING[id].piece ? Math.max(1,Math.round(g/ING[id].piece))+"×" : g+" g";
+    return `${ING[id].n} <span class="amt">${amt}</span>`;
+  }).join(" · ");
+}
+function macroCard(label,val,unit,target,over){
+  const pct=Math.min(100,Math.round(val/target*100));
+  return `<div class="macro ${over?'over':''}">
+    <div class="v">${Math.round(val)}<small>${unit}</small></div>
+    <div class="l">${label}</div>
+    <div class="bar"><i style="width:${pct}%"></i></div></div>`;
+}
+function fishBadge(d){
+  if(!d.fish) return "";
+  const txt = d.fish==="omega" ? "Omega-3" : "Garnelen";
+  return `<span class="fishbadge">${txt}</span>`;
+}
+function renderPlan(){
+  const list=document.getElementById("planList");
+  list.innerHTML = state.week.map((day,i)=>{
+    const d=DINNERS.find(x=>x.id===day.d);
+    const m=day.macros;
+    return `<div class="day">
+      <div class="day-head">
+        <div class="dl"><span class="dname">${WD[i]}</span><span class="ddate">Tag ${i+1}</span></div>
+        <button class="reroll" data-day="${i}" title="Tag neu würfeln">↻</button>
+      </div>
+      <div class="meal breakfast">
+        <div class="mtag">🌅</div>
+        <div class="mbody"><div class="mkind">Frühstück (fix)</div>
+          <div class="mname">${BREAKFAST_NAME}</div>
+          <div class="ings">${ingLine(day.ba)}</div></div>
+      </div>
+      <div class="meal dinner">
+        <div class="mtag">🌙</div>
+        <div class="mbody"><div class="mkind">Abendessen</div>
+          <div class="mname">${d.n} ${fishBadge(d)}</div>
+          <div class="ings">${ingLine(day.da)}</div></div>
+      </div>
+      <div class="macros">
+        ${macroCard("Protein",m.p,"g",120,false)}
+        ${macroCard("Fett",m.f,"g",30,m.f>34)}
+        ${macroCard("Kohlenh.",m.c,"g",185,false)}
+        <div class="macro kcal"><div class="v">${Math.round(m.kcal)}<small>kcal</small></div>
+          <div class="l">Energie</div><div class="bar"><i style="width:${Math.min(100,Math.round(m.kcal/1500*100))}%"></i></div></div>
+      </div>
+    </div>`;
+  }).join("");
+  list.querySelectorAll(".reroll").forEach(btn=>{
+    btn.onclick=()=>{
+      const i=+btn.dataset.day;
+      state.week[i]=genDay(isFishDay(state.week[i]) ? "fish" : "nofish");
+      state.checks={};
+      save(); renderPlan(); renderMeta(); renderShop(); updateBadge();
+    };
+  });
+}
+function renderMeta(){
+  const fc=fishCount(state.week);
+  const tot=state.week.reduce((a,x)=>a+x.macros.kcal,0)/7;
+  document.getElementById("weekMeta").innerHTML=
+    `<span class="pill">🐟 <b>${fc}</b> Fischtage</span>
+     <span class="pill">🎯 <b>120</b> g Protein</span>
+     <span class="pill">Ø <b>${Math.round(tot)}</b> kcal/Tag</span>`;
+}
+
+/* ---------- Rendering: Einkaufsliste ---------- */
+function aggregate(){
+  const agg={};
+  state.days.forEach(i=>{
+    const day=state.week[i];
+    [day.ba,day.da].forEach(am=>{for(const id in am){agg[id]=(agg[id]||0)+am[id];}});
+  });
+  return agg;
+}
+function fmtAmount(id,g){
+  if(ING[id].piece){return Math.max(1,Math.round(g/ING[id].piece))+" Stück";}
+  if(g>=1000) return (g/1000).toFixed(1).replace(".0","")+" kg";
+  return Math.round(g)+" g";
+}
+function fmtPack(id,g){
+  const ing=ING[id];
+  if(ing.pantry) return "Vorrat";
+  if(ing.pack){const packs=Math.ceil(g/ing.pack);const lbl=ing.pack>=1000?(ing.pack/1000)+" kg":ing.pack+" g";return "≈ "+packs+"× "+lbl;}
+  return "";
+}
+function renderChips(){
+  const wrap=document.getElementById("dayChips");
+  wrap.innerHTML=WD.map((w,i)=>`<button class="chip ${state.days.includes(i)?'on':''}" data-i="${i}">${w.slice(0,2)}</button>`).join("");
+  wrap.querySelectorAll(".chip").forEach(c=>{
+    c.onclick=()=>{
+      const i=+c.dataset.i;
+      if(state.days.includes(i)) state.days=state.days.filter(x=>x!==i);
+      else { state.days.push(i); state.days.sort((a,b)=>a-b); }
+      save(); renderChips(); renderShop(); updateBadge();
+    };
+  });
+}
+function renderShop(){
+  const agg=aggregate();
+  const cont=document.getElementById("shopList");
+  if(!Object.keys(agg).length){cont.innerHTML=`<div class="empty">Keine Tage ausgewählt.<br>Wähle oben mindestens einen Tag.</div>`;return;}
+  let html="";
+  CAT_ORDER.forEach(cat=>{
+    const ids=Object.keys(agg).filter(id=>ING[id].cat===cat)
+      .sort((a,b)=>(state.checks[a]?1:0)-(state.checks[b]?1:0) || ING[a].n.localeCompare(ING[b].n));
+    if(!ids.length) return;
+    html+=`<div class="cat"><h3><span class="ci">${CATS[cat].i}</span><span>${CATS[cat].n}</span>
+      <span class="cn">${ids.length} Artikel</span></h3><div class="list">`;
+    ids.forEach(id=>{
+      const done=!!state.checks[id];
+      const pack=fmtPack(id,agg[id]);
+      html+=`<div class="item ${done?'done':''}" data-id="${id}">
+        <div class="cbox"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <div class="iname">${ING[id].n}</div>
+        <div class="iamt">${fmtAmount(id,agg[id])}${pack?`<span class="ipack">${pack}</span>`:""}</div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  cont.innerHTML=html;
+  cont.querySelectorAll(".item").forEach(it=>{
+    it.onclick=()=>{
+      const id=it.dataset.id;
+      if(state.checks[id]) delete state.checks[id]; else state.checks[id]=1;
+      save(); renderShop(); updateBadge();
+    };
+  });
+}
+function updateBadge(){
+  const agg=aggregate();
+  const open=Object.keys(agg).filter(id=>!state.checks[id]).length;
+  const b=document.getElementById("shopBadge");
+  if(open>0){b.style.display="";b.textContent=open;} else b.style.display="none";
+}
+
+/* ---------- Navigation ---------- */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+    t.classList.add("on");
+    const v=t.dataset.view;
+    document.getElementById("viewPlan").classList.toggle("on",v==="Plan");
+    document.getElementById("viewShop").classList.toggle("on",v==="Shop");
+    document.getElementById("regenBtn").style.visibility = v==="Plan" ? "visible":"hidden";
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+});
+document.getElementById("regenBtn").onclick=()=>{
+  state.week=genWeek(); state.checks={};
+  save(); renderPlan(); renderMeta(); renderShop(); updateBadge();
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+document.getElementById("toggleAll").onclick=()=>{
+  state.days = state.days.length===7 ? [] : [0,1,2,3,4,5,6];
+  save(); renderChips(); renderShop(); updateBadge();
+};
+
+/* ---------- Init ---------- */
+renderPlan(); renderMeta(); renderChips(); renderShop(); updateBadge();
+
+/* ---------- Service Worker (Offline-Installation) ---------- */
+if("serviceWorker" in navigator){
+  const sw=`self.addEventListener("install",e=>self.skipWaiting());
+  self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
+  self.addEventListener("fetch",e=>{
+    e.respondWith(caches.open("mahlzeit").then(c=>
+      c.match(e.request).then(r=> r || fetch(e.request).then(res=>{
+        if(e.request.method==="GET") c.put(e.request,res.clone()); return res;
+      }).catch(()=>caches.match("./")) )));
+  });`;
+  try{
+    const url=URL.createObjectURL(new Blob([sw],{type:"text/javascript"}));
+    navigator.serviceWorker.register(url).catch(()=>{});
+  }catch(e){}
+}
+</script>
+</body>
+</html>
