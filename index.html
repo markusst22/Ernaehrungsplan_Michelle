@@ -60,12 +60,15 @@
   .reroll{border:none;background:var(--green-soft);color:var(--green-d);width:32px;height:32px;
     border-radius:10px;font-size:15px;cursor:pointer;display:grid;place-items:center;transition:transform .25s,background .15s}
   .reroll:active{transform:rotate(180deg) scale(.9);background:var(--mint)}
-  .meal{padding:12px 16px;display:flex;gap:12px;align-items:flex-start}
+  .meal{padding:12px 16px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:background .12s;position:relative}
   .meal + .meal{border-top:1px dashed var(--line)}
+  .meal:active{background:var(--bg2)}
+  .meal .chev{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--mint);font-size:18px}
   .mtag{flex:0 0 auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;
     background:var(--green-soft)}
+  .meal.lunch .mtag{background:#fdeccf}
   .meal.dinner .mtag{background:#f3e7f0}
-  .mbody{flex:1;min-width:0}
+  .mbody{flex:1;min-width:0;padding-right:16px}
   .mkind{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-soft);font-weight:700}
   .mname{font-weight:650;font-size:14.5px;margin:1px 0 4px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
   .fishbadge{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--fish);
@@ -127,6 +130,35 @@
 
   .view{display:none}
   .view.on{display:block}
+
+  /* Makro-Popup */
+  .overlay{position:fixed;inset:0;z-index:50;background:rgba(58,43,49,.45);
+    display:none;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(2px)}
+  .overlay.on{display:flex;animation:fade .2s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{background:var(--card);width:100%;max-width:560px;border-radius:22px 22px 0 0;
+    box-shadow:0 -8px 40px rgba(120,55,85,.25);overflow:hidden;animation:slideup .28s cubic-bezier(.2,.8,.2,1)}
+  @media(min-width:600px){.overlay{align-items:center}.modal{border-radius:22px;margin:0 16px}}
+  @keyframes slideup{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+  .modal-grab{width:40px;height:4px;border-radius:4px;background:var(--mint);margin:10px auto 0}
+  .modal-head{padding:12px 18px 14px;border-bottom:1px solid var(--line)}
+  .modal-head .mk{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--green-d);font-weight:700}
+  .modal-head .mt{font-size:18px;font-weight:700;margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .modal-body{padding:16px 18px 22px}
+  .mmac{display:flex;gap:8px;margin-bottom:14px}
+  .mmac .m{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:11px 8px;text-align:center}
+  .mmac .m .v{font-size:19px;font-weight:800;line-height:1}
+  .mmac .m .v small{font-size:11px;font-weight:600;color:var(--ink-soft)}
+  .mmac .m .l{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);margin-top:4px;font-weight:600}
+  .mmac .m.kcal{background:var(--green-soft);border-color:var(--mint)}
+  .mmac .m.kcal .v{color:var(--accent)}
+  .ilist{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .ilist li{display:flex;justify-content:space-between;padding:10px 13px;font-size:13.5px}
+  .ilist li + li{border-top:1px solid var(--line)}
+  .ilist li b{color:var(--accent);font-weight:700}
+  .modal-close{display:block;width:100%;margin-top:16px;border:none;background:var(--green);color:#fff;
+    font-size:15px;font-weight:700;padding:13px;border-radius:14px;cursor:pointer}
+  .modal-close:active{transform:scale(.98)}
 </style>
 </head>
 <body>
@@ -142,8 +174,8 @@
   <section class="view on" id="viewPlan">
     <div class="week-meta" id="weekMeta"></div>
     <div id="planList"></div>
-    <p class="hint">Ziel pro Tag: <b>120 g Protein · ~30 g Fett · 1500 kcal</b>.<br>
-      Frühstück ist fix, das Abendessen wird so berechnet, dass die Tagesziele zusammen aufgehen. Kein Brot · genau 2 Fischtage.</p>
+    <p class="hint">3 Mahlzeiten/Tag · Ziel: <b>120 g Protein · ~30 g Fett · 1500 kcal</b>.<br>
+      Frühstück ist fix · genau 2 Fischtage · kein Brot. Tippe auf eine Mahlzeit für ihre Makros.</p>
   </section>
 
   <section class="view" id="viewShop">
@@ -165,33 +197,45 @@
   </div>
 </nav>
 
+<!-- Makro-Popup -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal" role="dialog" aria-modal="true">
+    <div class="modal-grab"></div>
+    <div class="modal-head">
+      <div class="mk" id="mModalKind"></div>
+      <div class="mt" id="mModalName"></div>
+    </div>
+    <div class="modal-body">
+      <div class="mmac" id="mModalMacros"></div>
+      <ul class="ilist" id="mModalIngs"></ul>
+      <button class="modal-close" id="mModalClose">Schließen</button>
+    </div>
+  </div>
+</div>
+
 <script>
 "use strict";
 
 /* ---------- Lebensmittel (je 100 g, REWE-üblich) ---------- */
 const ING = {
-  // Milchprodukte
-  magerquark:{n:"Magerquark",cat:"milch",p:12,f:.3,c:4,pack:500,kmin:100,kmax:450},
-  skyr:{n:"Skyr natur",cat:"milch",p:11,f:.2,c:4,pack:450,kmin:150,kmax:450},
-  harzer:{n:"Harzer Käse",cat:"milch",p:30,f:.7,c:0,pack:200,kmin:80,kmax:220},
-  // Fisch & Meeresfrüchte
+  magerquark:{n:"Magerquark",cat:"milch",p:12,f:.3,c:4,pack:500,kmin:20,kmax:450},
+  skyr:{n:"Skyr natur",cat:"milch",p:11,f:.2,c:4,pack:450,kmin:20,kmax:450},
+  harzer:{n:"Harzer Käse",cat:"milch",p:30,f:.7,c:0,pack:200,kmin:60,kmax:220},
   lachs:{n:"Lachsfilet",cat:"fisch",p:20,f:13,c:0,pack:125},
   makrele:{n:"Makrelenfilet",cat:"fisch",p:20,f:16,c:0,pack:200},
   forelle:{n:"Forellenfilet",cat:"fisch",p:20,f:7,c:0,pack:250},
-  garnelen:{n:"Garnelen (TK)",cat:"fisch",p:18,f:1.5,c:0,pack:200,kmin:120,kmax:320},
-  // Fleisch
-  haehnchen:{n:"Hähnchenbrustfilet",cat:"fleisch",p:23,f:1.5,c:0,pack:400,kmin:120,kmax:330},
-  pute:{n:"Putenbrustfilet",cat:"fleisch",p:24,f:1,c:0,pack:400,kmin:120,kmax:330},
-  // Obst & Gemüse
+  garnelen:{n:"Garnelen (TK)",cat:"fisch",p:18,f:1.5,c:0,pack:200,kmin:100,kmax:300},
+  haehnchen:{n:"Hähnchenbrustfilet",cat:"fleisch",p:23,f:1.5,c:0,pack:400,kmin:80,kmax:300},
+  pute:{n:"Putenbrustfilet",cat:"fleisch",p:24,f:1,c:0,pack:400,kmin:80,kmax:300},
   brokkoli:{n:"Brokkoli",cat:"gemuese",p:3,f:.4,c:7,pack:400},
   paprika:{n:"Paprika",cat:"gemuese",p:1,f:.3,c:6,piece:150},
   zucchini:{n:"Zucchini",cat:"gemuese",p:1.2,f:.3,c:3,piece:200},
   zwiebel:{n:"Zwiebel",cat:"gemuese",p:1.1,f:.1,c:9,piece:100},
   spinat:{n:"Blattspinat (TK)",cat:"gemuese",p:3,f:.4,c:1.5,pack:450},
   gemuesemix:{n:"Gemüsepfanne (TK)",cat:"gemuese",p:2,f:.5,c:6,pack:450},
-  // Trockenwaren & Vorrat
-  reis:{n:"Reis",cat:"vorrat",p:7,f:.6,c:78,pack:500,kmin:60,kmax:220},
-  nudeln:{n:"Vollkornnudeln",cat:"vorrat",p:13,f:2.5,c:62,pack:500,kmin:60,kmax:230},
+  reis:{n:"Reis",cat:"vorrat",p:7,f:.6,c:78,pack:500,kmin:40,kmax:150},
+  nudeln:{n:"Vollkornnudeln",cat:"vorrat",p:13,f:2.5,c:62,pack:500,kmin:40,kmax:150},
+  quinoa:{n:"Quinoa",cat:"vorrat",p:14,f:6,c:58,pack:500,kmin:40,kmax:130},
   tomaten:{n:"Passierte Tomaten",cat:"vorrat",p:1.4,f:.2,c:5,pack:500},
   tofu:{n:"Tofu natur",cat:"vorrat",p:12,f:7,c:1.5,pack:200},
   granola:{n:"Granola",cat:"vorrat",p:8,f:16,c:62,pack:500},
@@ -201,39 +245,39 @@ const ING = {
   olivenoel:{n:"Olivenöl",cat:"vorrat",p:0,f:100,c:0,pantry:true},
 };
 const CATS = {
-  milch:{n:"Milchprodukte & Eier",i:"🥛"},
-  fisch:{n:"Fisch & Meeresfrüchte",i:"🐟"},
-  fleisch:{n:"Fleisch",i:"🍗"},
-  gemuese:{n:"Obst & Gemüse",i:"🥦"},
-  vorrat:{n:"Trockenwaren & Vorrat",i:"🫙"},
+  milch:{n:"Milchprodukte & Eier",i:"🥛"}, fisch:{n:"Fisch & Meeresfrüchte",i:"🐟"},
+  fleisch:{n:"Fleisch",i:"🍗"}, gemuese:{n:"Obst & Gemüse",i:"🥦"}, vorrat:{n:"Trockenwaren & Vorrat",i:"🫙"},
 };
 const CAT_ORDER = ["milch","fisch","fleisch","gemuese","vorrat"];
 const kcalPer100 = id => ING[id].p*4 + ING[id].f*9 + ING[id].c*4;
 
-/* ---------- Fixes Frühstück (jeden Tag gleich) ---------- */
+/* ---------- Fixes Frühstück ---------- */
 const FIXED_BREAKFAST = {magerquark:250, granola:30, whey:20, chia:5, walnuss:10};
 const BREAKFAST_NAME = "Protein-Quark-Bowl mit Granola";
 
-/* ---------- Abendessen: role P = Protein-Stellschraube, C = Carb-Stellschraube ---------- */
-const DINNERS = [
-  {id:"d1",n:"Hähnchen-Reispfanne",items:[["haehnchen",200,"P"],["reis",120,"C"],["brokkoli",200,""],["paprika",100,""],["olivenoel",5,""]]},
-  {id:"d2",n:"Lachs, Reis, Brokkoli & Quark-Dip",fish:"omega",items:[["lachs",110,""],["reis",120,"C"],["brokkoli",200,""],["magerquark",200,"P"]]},
-  {id:"d3",n:"Makrele-Reispfanne & Skyr-Dip",fish:"omega",items:[["makrele",90,""],["reis",120,"C"],["zucchini",200,""],["skyr",200,"P"]]},
-  {id:"d4",n:"Garnelen-Gemüse-Reispfanne",fish:"garnele",items:[["garnelen",200,"P"],["reis",120,"C"],["zucchini",200,""],["paprika",100,""],["olivenoel",5,""]]},
-  {id:"d6",n:"Forelle mit Reis & Gemüse",fish:"omega",items:[["forelle",150,""],["reis",120,"C"],["gemuesemix",250,""],["magerquark",150,"P"]]},
-  {id:"d7",n:"Putenbrust mit Vollkornnudeln & Tomatensauce",items:[["pute",200,"P"],["nudeln",120,"C"],["tomaten",200,""],["zwiebel",50,""],["olivenoel",5,""]]},
-  {id:"d8",n:"Hähnchen-Reis mit Spinat & Tomate",items:[["haehnchen",200,"P"],["reis",120,"C"],["spinat",150,""],["tomaten",100,""]]},
-  {id:"d9",n:"Tofu-Gemüse-Wok mit Reis",veg:true,items:[["tofu",150,""],["magerquark",200,"P"],["reis",120,"C"],["gemuesemix",300,""]]},
-  {id:"d11",n:"Harzer-Reispfanne mit Gemüse",veg:true,items:[["harzer",180,"P"],["reis",120,"C"],["zucchini",150,""],["paprika",100,""],["olivenoel",5,""]]},
+/* ---------- Hauptmahlzeiten (Mittag & Abend ziehen hieraus) ---------- */
+const MAINS = [
+  {id:"m1",n:"Hähnchen-Reispfanne",items:[["haehnchen",120,"P"],["reis",90,"C"],["brokkoli",150,""],["paprika",80,""],["olivenoel",3,""]]},
+  {id:"m2",n:"Putenbrust mit Vollkornnudeln & Tomatensauce",items:[["pute",120,"P"],["nudeln",90,"C"],["tomaten",150,""],["zwiebel",40,""],["olivenoel",3,""]]},
+  {id:"m3",n:"Hähnchen-Reis mit Spinat & Tomate",items:[["haehnchen",120,"P"],["reis",90,"C"],["spinat",120,""],["tomaten",80,""]]},
+  {id:"m4",n:"Tofu-Gemüse-Wok mit Reis",veg:true,items:[["tofu",100,""],["magerquark",120,"P"],["reis",80,"C"],["gemuesemix",200,""]]},
+  {id:"m5",n:"Harzer-Reispfanne mit Gemüse",veg:true,items:[["harzer",100,"P"],["reis",90,"C"],["zucchini",120,""],["paprika",80,""],["olivenoel",3,""]]},
+  {id:"m6",n:"Hähnchen-Quinoa-Bowl",items:[["haehnchen",120,"P"],["quinoa",80,"C"],["gemuesemix",200,""],["paprika",80,""]]},
+  {id:"m7",n:"Putenbrust-Reispfanne mit Brokkoli",items:[["pute",120,"P"],["reis",90,"C"],["brokkoli",200,""],["olivenoel",3,""]]},
+  {id:"f1",n:"Lachs, Reis, Brokkoli & Quark-Dip",fish:"omega",items:[["lachs",90,""],["reis",80,"C"],["brokkoli",150,""],["magerquark",120,"P"]]},
+  {id:"f2",n:"Makrele-Reispfanne & Skyr-Dip",fish:"omega",items:[["makrele",70,""],["reis",80,"C"],["zucchini",150,""],["skyr",120,"P"]]},
+  {id:"f3",n:"Forelle mit Reis & Gemüse",fish:"omega",items:[["forelle",100,""],["reis",80,"C"],["gemuesemix",200,""],["magerquark",100,"P"]]},
+  {id:"f4",n:"Garnelen-Gemüse-Reispfanne",fish:"garnele",items:[["garnelen",150,"P"],["reis",90,"C"],["zucchini",150,""],["paprika",80,""],["olivenoel",3,""]]},
 ];
+const mealById = id => MAINS.find(m=>m.id===id);
+const FISH_MAINS   = MAINS.filter(m=>m.fish);
+const NOFISH_MAINS = MAINS.filter(m=>!m.fish);
 const FISH_DAYS_PER_WEEK = 2;
-const FISH_DINNERS   = DINNERS.filter(d=>d.fish);    // Lachs/Makrele/Forelle/Garnelen
-const NOFISH_DINNERS = DINNERS.filter(d=>!d.fish);
 
 const DAY_P=120, DAY_KCAL=1500;
 const WD = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
 
-/* ---------- Solver: skaliert P- & C-Knopf des Abendessens ---------- */
+/* ---------- Solver ---------- */
 function solveMeal(meal, targetP, targetKcal){
   let fixedP=0, fixedKcal=0, pKnob=null, cKnob=null;
   const amounts={};
@@ -260,19 +304,34 @@ function macrosOf(amounts){
   for(const id in amounts){const g=amounts[id];p+=ING[id].p*g/100;f+=ING[id].f*g/100;c+=ING[id].c*g/100;}
   return {p,f,c,kcal:p*4+f*9+c*4};
 }
-function mergeAmt(a,b){const o={...a};for(const k in b)o[k]=(o[k]||0)+b[k];return o;}
-function buildDay(d){
+function mergeAmt(...objs){const o={};objs.forEach(a=>{for(const k in a)o[k]=(o[k]||0)+a[k];});return o;}
+function buildDay(lunchM, dinnerM){
   const bm=macrosOf(FIXED_BREAKFAST);
-  const da=solveMeal(d, DAY_P-bm.p, DAY_KCAL-bm.kcal);
+  const remP=DAY_P-bm.p, remK=DAY_KCAL-bm.kcal;
+  const la=solveMeal(lunchM,  remP/2, remK/2);
+  const da=solveMeal(dinnerM, remP/2, remK/2);
   const ba={...FIXED_BREAKFAST};
-  return {d:d.id, ba, da, macros:macrosOf(mergeAmt(ba,da))};
+  return {l:lunchM.id, d:dinnerM.id, ba, la, da, macros:macrosOf(mergeAmt(ba,la,da))};
 }
 
 /* ---------- Wochenerzeugung: genau 2 Fischtage ---------- */
 function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
-function genDay(mode){ return buildDay(pick(mode==="fish"?FISH_DINNERS:NOFISH_DINNERS)); }
-function isFishDay(day){return !!DINNERS.find(d=>d.id===day.d).fish;}
-function fishCount(week){return week.filter(isFishDay).length;}
+function genDay(mode){
+  let best=null,bestErr=1e9;
+  for(let t=0;t<25;t++){
+    let lunchM,dinnerM;
+    if(mode==="fish"){ dinnerM=pick(FISH_MAINS); lunchM=pick(NOFISH_MAINS); }
+    else { lunchM=pick(NOFISH_MAINS); do{dinnerM=pick(NOFISH_MAINS);}while(dinnerM.id===lunchM.id); }
+    const day=buildDay(lunchM,dinnerM);
+    const m=day.macros;
+    const err=Math.abs(m.p-DAY_P)*2 + Math.abs(m.kcal-DAY_KCAL)/30 + Math.max(0,m.f-32);
+    if(Math.abs(m.p-DAY_P)<6 && Math.abs(m.kcal-DAY_KCAL)<130 && m.f<=35) return day;
+    if(err<bestErr){bestErr=err;best=day;}
+  }
+  return best;
+}
+function dayIsFish(day){return !!(mealById(day.l).fish || mealById(day.d).fish);}
+function fishCount(week){return week.filter(dayIsFish).length;}
 function genWeek(){
   const idx=[0,1,2,3,4,5,6];
   for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
@@ -285,12 +344,12 @@ function genWeek(){
 /* ---------- State + Persistenz ---------- */
 let state = load() || {week:genWeek(), days:[0,1,2,3,4,5,6], checks:{}};
 if(!Array.isArray(state.week) || state.week.length!==7 ||
-   state.week.some(x=>!x||!DINNERS.find(d=>d.id===x.d)) ||
+   state.week.some(x=>!x||!mealById(x.l)||!mealById(x.d)) ||
    fishCount(state.week)!==FISH_DAYS_PER_WEEK){
   state.week=genWeek(); state.checks={};
 }
-function load(){try{const s=localStorage.getItem("mahlzeit_v2");return s?JSON.parse(s):null;}catch(e){return null;}}
-function save(){try{localStorage.setItem("mahlzeit_v2",JSON.stringify(state));}catch(e){}}
+function load(){try{const s=localStorage.getItem("mahlzeit_v3");return s?JSON.parse(s):null;}catch(e){return null;}}
+function save(){try{localStorage.setItem("mahlzeit_v3",JSON.stringify(state));}catch(e){}}
 
 /* ---------- Rendering: Wochenplan ---------- */
 function ingLine(amounts){
@@ -307,33 +366,31 @@ function macroCard(label,val,unit,target,over){
     <div class="l">${label}</div>
     <div class="bar"><i style="width:${pct}%"></i></div></div>`;
 }
-function fishBadge(d){
-  if(!d.fish) return "";
-  const txt = d.fish==="omega" ? "Omega-3" : "Garnelen";
-  return `<span class="fishbadge">${txt}</span>`;
+function fishBadge(meal){
+  if(!meal.fish) return "";
+  return `<span class="fishbadge">${meal.fish==="omega"?"Omega-3":"Garnelen"}</span>`;
 }
 function renderPlan(){
   const list=document.getElementById("planList");
   list.innerHTML = state.week.map((day,i)=>{
-    const d=DINNERS.find(x=>x.id===day.d);
+    const lunch=mealById(day.l), dinner=mealById(day.d);
     const m=day.macros;
+    const mealRow=(key,kind,icon,cls,name,amounts,badge)=>`
+      <div class="meal ${cls}" data-day="${i}" data-key="${key}">
+        <div class="mtag">${icon}</div>
+        <div class="mbody"><div class="mkind">${kind}</div>
+          <div class="mname">${name} ${badge}</div>
+          <div class="ings">${ingLine(amounts)}</div></div>
+        <span class="chev">›</span>
+      </div>`;
     return `<div class="day">
       <div class="day-head">
         <div class="dl"><span class="dname">${WD[i]}</span><span class="ddate">Tag ${i+1}</span></div>
         <button class="reroll" data-day="${i}" title="Tag neu würfeln">↻</button>
       </div>
-      <div class="meal breakfast">
-        <div class="mtag">🌅</div>
-        <div class="mbody"><div class="mkind">Frühstück (fix)</div>
-          <div class="mname">${BREAKFAST_NAME}</div>
-          <div class="ings">${ingLine(day.ba)}</div></div>
-      </div>
-      <div class="meal dinner">
-        <div class="mtag">🌙</div>
-        <div class="mbody"><div class="mkind">Abendessen</div>
-          <div class="mname">${d.n} ${fishBadge(d)}</div>
-          <div class="ings">${ingLine(day.da)}</div></div>
-      </div>
+      ${mealRow("ba","Frühstück (fix)","🌅","breakfast",BREAKFAST_NAME,day.ba,"")}
+      ${mealRow("la","Mittagessen","☀️","lunch",lunch.n,day.la,fishBadge(lunch))}
+      ${mealRow("da","Abendessen","🌙","dinner",dinner.n,day.da,fishBadge(dinner))}
       <div class="macros">
         ${macroCard("Protein",m.p,"g",120,false)}
         ${macroCard("Fett",m.f,"g",30,m.f>34)}
@@ -343,12 +400,23 @@ function renderPlan(){
       </div>
     </div>`;
   }).join("");
+
   list.querySelectorAll(".reroll").forEach(btn=>{
-    btn.onclick=()=>{
+    btn.onclick=(e)=>{
+      e.stopPropagation();
       const i=+btn.dataset.day;
-      state.week[i]=genDay(isFishDay(state.week[i]) ? "fish" : "nofish");
+      state.week[i]=genDay(dayIsFish(state.week[i]) ? "fish" : "nofish");
       state.checks={};
       save(); renderPlan(); renderMeta(); renderShop(); updateBadge();
+    };
+  });
+  list.querySelectorAll(".meal").forEach(el=>{
+    el.onclick=()=>{
+      const day=state.week[+el.dataset.day], key=el.dataset.key;
+      const amounts=day[key];
+      const kind = key==="ba"?"Frühstück": key==="la"?"Mittagessen":"Abendessen";
+      const meal = key==="ba"?{n:BREAKFAST_NAME}: key==="la"?mealById(day.l):mealById(day.d);
+      openMeal(kind, meal, amounts);
     };
   });
 }
@@ -357,16 +425,38 @@ function renderMeta(){
   const tot=state.week.reduce((a,x)=>a+x.macros.kcal,0)/7;
   document.getElementById("weekMeta").innerHTML=
     `<span class="pill">🐟 <b>${fc}</b> Fischtage</span>
-     <span class="pill">🎯 <b>120</b> g Protein</span>
-     <span class="pill">Ø <b>${Math.round(tot)}</b> kcal/Tag</span>`;
+     <span class="pill">🍽️ <b>3</b> Mahlzeiten/Tag</span>
+     <span class="pill">Ø <b>${Math.round(tot)}</b> kcal</span>`;
 }
+
+/* ---------- Makro-Popup ---------- */
+function openMeal(kind, meal, amounts){
+  const m=macrosOf(amounts);
+  document.getElementById("mModalKind").textContent=kind;
+  document.getElementById("mModalName").innerHTML=(meal.n||"")+" "+fishBadge(meal);
+  document.getElementById("mModalMacros").innerHTML=`
+    <div class="m"><div class="v">${Math.round(m.p)}<small>g</small></div><div class="l">Protein</div></div>
+    <div class="m"><div class="v">${Math.round(m.f)}<small>g</small></div><div class="l">Fett</div></div>
+    <div class="m"><div class="v">${Math.round(m.c)}<small>g</small></div><div class="l">Kohlenh.</div></div>
+    <div class="m kcal"><div class="v">${Math.round(m.kcal)}<small>kcal</small></div><div class="l">Energie</div></div>`;
+  document.getElementById("mModalIngs").innerHTML=Object.keys(amounts).map(id=>{
+    const g=Math.round(amounts[id]);
+    const amt = ING[id].piece ? Math.max(1,Math.round(g/ING[id].piece))+" Stück" : g+" g";
+    return `<li><span>${ING[id].n}</span><b>${amt}</b></li>`;
+  }).join("");
+  document.getElementById("overlay").classList.add("on");
+}
+function closeMeal(){document.getElementById("overlay").classList.remove("on");}
+document.getElementById("mModalClose").onclick=closeMeal;
+document.getElementById("overlay").onclick=(e)=>{if(e.target.id==="overlay")closeMeal();};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMeal();});
 
 /* ---------- Rendering: Einkaufsliste ---------- */
 function aggregate(){
   const agg={};
   state.days.forEach(i=>{
     const day=state.week[i];
-    [day.ba,day.da].forEach(am=>{for(const id in am){agg[id]=(agg[id]||0)+am[id];}});
+    [day.ba,day.la,day.da].forEach(am=>{for(const id in am){agg[id]=(agg[id]||0)+am[id];}});
   });
   return agg;
 }
@@ -456,7 +546,7 @@ document.getElementById("toggleAll").onclick=()=>{
 /* ---------- Init ---------- */
 renderPlan(); renderMeta(); renderChips(); renderShop(); updateBadge();
 
-/* ---------- Service Worker (Offline-Installation) ---------- */
+/* ---------- Service Worker ---------- */
 if("serviceWorker" in navigator){
   const sw=`self.addEventListener("install",e=>self.skipWaiting());
   self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
